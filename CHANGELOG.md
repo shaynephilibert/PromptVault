@@ -2,6 +2,14 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.2] — 2026-03-28
+
+### Changed
+- Replaced emoji-based lock icon with clean SVG path geometry — consistent rendering across all OS versions, no font dependency
+- Regenerated all icon sizes (16, 48, 128px) from updated `scripts/generate-icons.mjs`
+
+---
+
 ## [1.0.1] — 2026-03-27
 
 ### Changed
