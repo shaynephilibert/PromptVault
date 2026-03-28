@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "PromptVault — Private AI Prompt Manager",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "Save, organize, and inject prompts into any AI. Encrypted locally. No account. No server. Your data never leaves your browser.",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": ["storage", "activeTab"],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://claude.ai/*",

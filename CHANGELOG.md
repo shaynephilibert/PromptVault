@@ -2,6 +2,13 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.4] — 2026-03-28
+
+### Fixed
+- Removed unused `scripting` permission from manifest — caused Chrome Web Store rejection (Use of Permissions violation)
+
+---
+
 ## [1.0.3] — 2026-03-28
 
 ### Changed
