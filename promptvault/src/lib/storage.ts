@@ -17,6 +17,28 @@ export interface VaultData {
 }
 
 const STORAGE_KEY = 'promptvault_data';
+const SESSION_PW_KEY = 'pv_session_pw';
+const SESSION_VAULT_KEY = 'pv_session_vault';
+
+export async function saveSession(password: string, vault: VaultData): Promise<void> {
+  await chrome.storage.session.set({
+    [SESSION_PW_KEY]: password,
+    [SESSION_VAULT_KEY]: JSON.stringify(vault),
+  });
+}
+
+export async function loadSession(): Promise<{ password: string; vault: VaultData } | null> {
+  const result = await chrome.storage.session.get([SESSION_PW_KEY, SESSION_VAULT_KEY]);
+  if (!result[SESSION_PW_KEY] || !result[SESSION_VAULT_KEY]) return null;
+  return {
+    password: result[SESSION_PW_KEY] as string,
+    vault: JSON.parse(result[SESSION_VAULT_KEY] as string) as VaultData,
+  };
+}
+
+export async function clearSession(): Promise<void> {
+  await chrome.storage.session.remove([SESSION_PW_KEY, SESSION_VAULT_KEY]);
+}
 
 export async function saveVault(data: VaultData, password: string): Promise<void> {
   const encrypted = encrypt(JSON.stringify(data), password);

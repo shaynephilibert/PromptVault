@@ -4,10 +4,11 @@ import { type VaultData, exportVault, importPrompts } from '../../lib/storage';
 interface Props {
   vault: VaultData;
   onVaultChange: (updated: VaultData) => void;
+  onLock: () => void;
   onClose: () => void;
 }
 
-export default function SettingsModal({ vault, onVaultChange, onClose }: Props) {
+export default function SettingsModal({ vault, onVaultChange, onLock, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -92,6 +93,20 @@ export default function SettingsModal({ vault, onVaultChange, onClose }: Props) 
             {importError && (
               <p className="text-red-400 text-xs mt-2">{importError}</p>
             )}
+          </div>
+
+          {/* Lock */}
+          <div className="bg-gray-800 rounded-lg p-3">
+            <p className="text-white text-xs font-medium mb-1">Lock Vault</p>
+            <p className="text-gray-500 text-xs mb-3">
+              Require password on next open. Vault auto-locks when the browser closes.
+            </p>
+            <button
+              onClick={onLock}
+              className="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium transition-colors"
+            >
+              Lock now
+            </button>
           </div>
 
           {/* Stats */}

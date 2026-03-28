@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { vaultExists, loadVault, saveVault, type VaultData } from '../lib/storage';
+import { vaultExists, loadVault, saveVault, saveSession, loadSession, clearSession, type VaultData } from '../lib/storage';
 import { isPaidUser } from '../lib/extensionpay';
 import SetPasswordScreen from './components/SetPasswordScreen';
 import UnlockScreen from './components/UnlockScreen';
@@ -15,9 +15,15 @@ export default function Popup() {
 
   useEffect(() => {
     (async () => {
-      const exists = await vaultExists();
-      const paidStatus = await isPaidUser();
+      const [session, paidStatus] = await Promise.all([loadSession(), isPaidUser()]);
       setPaid(paidStatus);
+      if (session) {
+        setPassword(session.password);
+        setVault(session.vault);
+        setScreen('main');
+        return;
+      }
+      const exists = await vaultExists();
       setScreen(exists ? 'unlock' : 'set-password');
     })();
   }, []);
@@ -28,6 +34,7 @@ export default function Popup() {
       categories: ['General', 'Writing', 'Coding', 'Research'],
     };
     await saveVault(initial, pw);
+    await saveSession(pw, initial);
     setPassword(pw);
     setVault(initial);
     setScreen('main');
@@ -36,6 +43,7 @@ export default function Popup() {
   async function handleUnlock(pw: string): Promise<boolean> {
     const data = await loadVault(pw);
     if (!data) return false;
+    await saveSession(pw, data);
     setPassword(pw);
     setVault(data);
     setScreen('main');
@@ -44,7 +52,14 @@ export default function Popup() {
 
   async function handleVaultChange(updated: VaultData) {
     setVault(updated);
-    await saveVault(updated, password);
+    await Promise.all([saveVault(updated, password), saveSession(password, updated)]);
+  }
+
+  async function handleLock() {
+    await clearSession();
+    setPassword('');
+    setVault(null);
+    setScreen('unlock');
   }
 
   if (screen === 'loading') {
@@ -68,6 +83,7 @@ export default function Popup() {
       vault={vault!}
       paid={paid}
       onVaultChange={handleVaultChange}
+      onLock={handleLock}
     />
   );
 }

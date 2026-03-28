@@ -2,6 +2,15 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.5] — 2026-03-28
+
+### Added
+- Session unlock — vault stays unlocked for the browser session; no password re-entry needed until browser closes or user manually locks
+- "Lock now" button in Settings to immediately require password on next open
+- Agent message API via `chrome.runtime.onMessageExternal` — other extensions can query the vault with `PV_STATUS`, `PV_GET_ALL`, `PV_SEARCH`, `PV_GET_BY_CATEGORY`, `PV_GET_BY_TAG`; returns `{ error: 'locked' }` when vault is locked
+
+---
+
 ## [1.0.4] — 2026-03-28
 
 ### Fixed

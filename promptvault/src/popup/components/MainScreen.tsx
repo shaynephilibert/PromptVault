@@ -19,6 +19,7 @@ interface Props {
   vault: VaultData;
   paid: boolean;
   onVaultChange: (updated: VaultData) => void;
+  onLock: () => void;
 }
 
 function sortPrompts(prompts: Prompt[], order: SortOrder): Prompt[] {
@@ -35,7 +36,7 @@ function sortPrompts(prompts: Prompt[], order: SortOrder): Prompt[] {
   return [...pinned, ...sorted];
 }
 
-export default function MainScreen({ vault, paid, onVaultChange }: Props) {
+export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -351,6 +352,7 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
         <SettingsModal
           vault={vault}
           onVaultChange={onVaultChange}
+          onLock={onLock}
           onClose={() => setShowSettings(false)}
         />
       )}
