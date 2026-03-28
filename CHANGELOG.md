@@ -2,6 +2,15 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.6] — 2026-03-28
+
+### Added
+- `promptvault-mcp/` — companion MCP server package; exposes vault to Claude Code and any MCP-compatible agent via 5 tools: `promptvault_status`, `promptvault_get_all`, `promptvault_search`, `promptvault_get_by_category`, `promptvault_get_by_tag`
+- Extension service worker now pushes decrypted vault to MCP bridge (http://127.0.0.1:7427) on unlock and every vault change; silent no-op if MCP server is not running
+- Added `http://127.0.0.1:7427/*` to host_permissions for MCP bridge communication
+
+---
+
 ## [1.0.5] — 2026-03-28
 
 ### Added
