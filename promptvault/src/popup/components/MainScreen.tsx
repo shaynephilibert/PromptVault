@@ -13,7 +13,7 @@ const FREE_PROMPT_LIMIT = 15;
 const FREE_CATEGORY_LIMIT = 3;
 
 type SortOrder = 'newest' | 'oldest' | 'az' | 'za' | 'popular';
-type UpgradeReason = 'prompts' | 'categories' | 'injection';
+type UpgradeReason = 'prompts' | 'categories';
 
 interface Props {
   vault: VaultData;
@@ -197,13 +197,6 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
       const isClaude = url.includes('claude.ai');
       const isGemini = url.includes('gemini.google.com');
       const isGrok = url.includes('grok.com');
-      const isPaidPlatform = isClaude || isGemini || isGrok;
-
-      if (isPaidPlatform && !paid) {
-        setUpgradeReason('injection');
-        return;
-      }
-
       if (!isChatGPT && !isClaude && !isGemini && !isGrok) {
         setInjectStatus('Navigate to ChatGPT, Claude, Gemini, or Grok first');
         setTimeout(() => setInjectStatus(null), 2500);

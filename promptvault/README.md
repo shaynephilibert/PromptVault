@@ -16,9 +16,9 @@ Save, organize, and inject prompts into ChatGPT, Claude, Gemini, and Grok with o
 | Platform | Free | Pro |
 |----------|------|-----|
 | ChatGPT | ✓ | ✓ |
-| Claude | — | ✓ |
-| Gemini | — | ✓ |
-| Grok | — | ✓ |
+| Claude | ✓ | ✓ |
+| Gemini | ✓ | ✓ |
+| Grok | ✓ | ✓ |
 
 ## Tech Stack
 

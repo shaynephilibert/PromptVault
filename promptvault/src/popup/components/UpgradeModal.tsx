@@ -1,7 +1,7 @@
 import { openPaymentPage } from '../../lib/extensionpay';
 
 interface Props {
-  reason: 'prompts' | 'categories' | 'injection';
+  reason: 'prompts' | 'categories';
   totalUses: number;
   onClose: () => void;
 }
@@ -9,7 +9,6 @@ interface Props {
 const MESSAGES = {
   prompts: "You've reached the 15-prompt limit on the free plan.",
   categories: "You've reached the 3-category limit on the free plan.",
-  injection: 'Injecting prompts into Claude, Gemini, and Grok requires the Pro plan.',
 };
 
 export default function UpgradeModal({ reason, totalUses, onClose }: Props) {
@@ -27,7 +26,6 @@ export default function UpgradeModal({ reason, totalUses, onClose }: Props) {
 
         <ul className="text-sm text-gray-300 space-y-1 mb-5">
           <li>✓ Unlimited prompts &amp; categories</li>
-          <li>✓ Inject into Claude, Gemini &amp; Grok</li>
           <li>✓ Prompt variables like {'{{topic}}'}</li>
           <li>✓ Priority support</li>
         </ul>

@@ -2,6 +2,15 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.3] — 2026-03-28
+
+### Changed
+- Injection into Claude, Gemini, and Grok is now available on the free plan — all 4 platforms unlocked for everyone
+- Removed platform gate from upgrade modal; Pro value is now unlimited prompts/categories + prompt variables
+- Updated onboarding overlay and README to reflect new free tier
+
+---
+
 ## [1.0.2] — 2026-03-28
 
 ### Changed
