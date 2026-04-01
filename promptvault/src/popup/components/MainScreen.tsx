@@ -8,6 +8,7 @@ import EditPromptModal from './EditPromptModal';
 import SettingsModal from './SettingsModal';
 import ManageCategoriesModal from './ManageCategoriesModal';
 import UpgradeModal from './UpgradeModal';
+import VariableFillModal from './VariableFillModal';
 
 const FREE_PROMPT_LIMIT = 15;
 const FREE_CATEGORY_LIMIT = 3;
@@ -44,6 +45,7 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
   const [showManageCategories, setShowManageCategories] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
   const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null);
+  const [varFillTarget, setVarFillTarget] = useState<Prompt | null>(null);
   const [search, setSearch] = useState('');
   const [injectStatus, setInjectStatus] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -65,7 +67,7 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
   useEffect(() => {
     const anyModalOpen =
       showAddModal || showSettings || showManageCategories ||
-      !!editingPrompt || !!upgradeReason || showOnboarding;
+      !!editingPrompt || !!upgradeReason || showOnboarding || !!varFillTarget;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -74,6 +76,7 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
         else if (showManageCategories) setShowManageCategories(false);
         else if (editingPrompt) setEditingPrompt(null);
         else if (upgradeReason) setUpgradeReason(null);
+        else if (varFillTarget) setVarFillTarget(null);
         else if (showOnboarding) dismissOnboarding();
         return;
       }
@@ -86,7 +89,7 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showAddModal, showSettings, showManageCategories, editingPrompt, upgradeReason, showOnboarding]);
+  }, [showAddModal, showSettings, showManageCategories, editingPrompt, upgradeReason, showOnboarding, varFillTarget]);
 
   const canAddPrompt = paid || vault.prompts.length < FREE_PROMPT_LIMIT;
   const canAddCategory = paid || vault.categories.length < FREE_CATEGORY_LIMIT;
@@ -177,18 +180,26 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
     });
   }
 
-  async function handleInject(prompt: Prompt) {
-    let text = prompt.body;
-    if (paid) {
-      const vars = [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
-      if (vars.length > 0) {
-        for (const v of vars) {
-          const val = window.prompt(`Value for {{${v}}}:`);
-          if (val !== null) text = text.replaceAll(`{{${v}}}`, val);
-        }
-      }
+  function handleInject(prompt: Prompt) {
+    const vars = [...new Set([...prompt.body.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]))];
+    if (vars.length > 0) {
+      setVarFillTarget(prompt);
+      return;
     }
+    doInject(prompt.body, prompt);
+  }
 
+  async function handleVarFillSubmit(values: Record<string, string>) {
+    if (!varFillTarget) return;
+    let text = varFillTarget.body;
+    for (const [k, v] of Object.entries(values)) {
+      text = text.replaceAll(`{{${k}}}`, v);
+    }
+    setVarFillTarget(null);
+    await doInject(text, varFillTarget);
+  }
+
+  async function doInject(text: string, prompt: Prompt) {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab?.id || !tab.url) return;
@@ -231,7 +242,9 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
               className="p-1 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
               title="Settings"
             >
-              ⚙
+              <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor">
+                <path fillRule="evenodd" clipRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
             </button>
             <button
               onClick={handleAddClick}
@@ -351,6 +364,7 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
       {showSettings && (
         <SettingsModal
           vault={vault}
+          paid={paid}
           onVaultChange={onVaultChange}
           onLock={onLock}
           onClose={() => setShowSettings(false)}
@@ -378,6 +392,14 @@ export default function MainScreen({ vault, paid, onVaultChange, onLock }: Props
           reason={upgradeReason}
           totalUses={vault.prompts.reduce((sum, p) => sum + p.useCount, 0)}
           onClose={() => setUpgradeReason(null)}
+        />
+      )}
+      {varFillTarget && (
+        <VariableFillModal
+          promptTitle={varFillTarget.title}
+          variables={[...new Set([...varFillTarget.body.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]))]}
+          onInject={handleVarFillSubmit}
+          onClose={() => setVarFillTarget(null)}
         />
       )}
       {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}

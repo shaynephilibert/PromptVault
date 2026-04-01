@@ -2,12 +2,22 @@
 
 All notable changes to PromptVault will be documented here.
 
-## [1.0.6] — 2026-03-28
+## [1.0.7] — 2026-03-31
 
-### Added
-- `promptvault-mcp/` — companion MCP server package; exposes vault to Claude Code and any MCP-compatible agent via 5 tools: `promptvault_status`, `promptvault_get_all`, `promptvault_search`, `promptvault_get_by_category`, `promptvault_get_by_tag`
-- Extension service worker now pushes decrypted vault to MCP bridge (http://127.0.0.1:7427) on unlock and every vault change; silent no-op if MCP server is not running
-- Added `http://127.0.0.1:7427/*` to host_permissions for MCP bridge communication
+### Changed
+- Gear icon replaced with SVG (consistent rendering across all OS versions)
+- Prompt variables (`{{variable}}`) now available on free plan — you'll be prompted to fill in each value before injecting
+- Variable fill-in flow replaced with an in-extension modal (replaces native browser `window.prompt()` dialogs)
+- Settings modal now includes Upgrade to Pro / Manage subscription depending on account status
+
+### Fixed
+- Gear icon was disproportionate (emoji rendering); now uses SVG path geometry
+
+---
+
+## [1.0.6] — 2026-03-28 *(MCP bridge — held, not shipped)*
+
+> Feature built but pulled back pending better discoverability and documentation. Code lives in `promptvault-mcp/`. See ROADMAP.md.
 
 ---
 

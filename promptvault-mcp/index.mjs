@@ -43,6 +43,14 @@ const bridge = createServer((req, res) => {
   res.end();
 });
 
+bridge.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    process.stderr.write(`PromptVault MCP bridge: port ${BRIDGE_PORT} already in use — bridge disabled, MCP tools still available\n`);
+  } else {
+    process.stderr.write(`PromptVault MCP bridge error: ${err.message}\n`);
+  }
+});
+
 bridge.listen(BRIDGE_PORT, '127.0.0.1', () => {
   process.stderr.write(`PromptVault MCP bridge listening on http://127.0.0.1:${BRIDGE_PORT}\n`);
 });

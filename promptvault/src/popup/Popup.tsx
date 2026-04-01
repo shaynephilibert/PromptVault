@@ -8,6 +8,7 @@ import MainScreen from './components/MainScreen';
 type Screen = 'loading' | 'set-password' | 'unlock' | 'main';
 
 export default function Popup() {
+  const isUnlockTab = new URLSearchParams(window.location.search).get('unlock') === '1';
   const [screen, setScreen] = useState<Screen>('loading');
   const [vault, setVault] = useState<VaultData | null>(null);
   const [password, setPassword] = useState('');
@@ -44,6 +45,7 @@ export default function Popup() {
     const data = await loadVault(pw);
     if (!data) return false;
     await saveSession(pw, data);
+    if (isUnlockTab) { window.close(); return true; }
     setPassword(pw);
     setVault(data);
     setScreen('main');

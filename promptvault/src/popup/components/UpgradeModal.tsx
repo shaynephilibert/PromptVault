@@ -26,7 +26,6 @@ export default function UpgradeModal({ reason, totalUses, onClose }: Props) {
 
         <ul className="text-sm text-gray-300 space-y-1 mb-5">
           <li>✓ Unlimited prompts &amp; categories</li>
-          <li>✓ Prompt variables like {'{{topic}}'}</li>
           <li>✓ Priority support</li>
         </ul>
 
