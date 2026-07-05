@@ -7,18 +7,15 @@ import AddPromptModal from './AddPromptModal';
 import EditPromptModal from './EditPromptModal';
 import SettingsModal from './SettingsModal';
 import ManageCategoriesModal from './ManageCategoriesModal';
-import UpgradeModal from './UpgradeModal';
-
-const FREE_PROMPT_LIMIT = 15;
-const FREE_CATEGORY_LIMIT = 3;
+import VariableFillModal from './VariableFillModal';
 
 type SortOrder = 'newest' | 'oldest' | 'az' | 'za' | 'popular';
-type UpgradeReason = 'prompts' | 'categories' | 'injection';
 
 interface Props {
   vault: VaultData;
-  paid: boolean;
   onVaultChange: (updated: VaultData) => void;
+  onLock: () => void;
+  onSetRemember: (remember: boolean) => Promise<void>;
 }
 
 function sortPrompts(prompts: Prompt[], order: SortOrder): Prompt[] {
@@ -35,14 +32,14 @@ function sortPrompts(prompts: Prompt[], order: SortOrder): Prompt[] {
   return [...pinned, ...sorted];
 }
 
-export default function MainScreen({ vault, paid, onVaultChange }: Props) {
+export default function MainScreen({ vault, onVaultChange, onLock, onSetRemember }: Props) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showManageCategories, setShowManageCategories] = useState(false);
   const [editingPrompt, setEditingPrompt] = useState<Prompt | null>(null);
-  const [upgradeReason, setUpgradeReason] = useState<UpgradeReason | null>(null);
+  const [varFillTarget, setVarFillTarget] = useState<Prompt | null>(null);
   const [search, setSearch] = useState('');
   const [injectStatus, setInjectStatus] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -64,7 +61,7 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
   useEffect(() => {
     const anyModalOpen =
       showAddModal || showSettings || showManageCategories ||
-      !!editingPrompt || !!upgradeReason || showOnboarding;
+      !!editingPrompt || showOnboarding || !!varFillTarget;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -72,7 +69,7 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
         else if (showSettings) setShowSettings(false);
         else if (showManageCategories) setShowManageCategories(false);
         else if (editingPrompt) setEditingPrompt(null);
-        else if (upgradeReason) setUpgradeReason(null);
+        else if (varFillTarget) setVarFillTarget(null);
         else if (showOnboarding) dismissOnboarding();
         return;
       }
@@ -85,10 +82,7 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showAddModal, showSettings, showManageCategories, editingPrompt, upgradeReason, showOnboarding]);
-
-  const canAddPrompt = paid || vault.prompts.length < FREE_PROMPT_LIMIT;
-  const canAddCategory = paid || vault.categories.length < FREE_CATEGORY_LIMIT;
+  }, [showAddModal, showSettings, showManageCategories, editingPrompt, showOnboarding, varFillTarget]);
 
   const TOP_COUNT = 5;
   const hasUsage = vault.prompts.some((p) => p.useCount > 0);
@@ -115,10 +109,6 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
   );
 
   function handleAddClick() {
-    if (!canAddPrompt) {
-      setUpgradeReason('prompts');
-      return;
-    }
     setShowAddModal(true);
   }
 
@@ -176,20 +166,28 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
     });
   }
 
-  async function handleInject(prompt: Prompt) {
-    let text = prompt.body;
-    if (paid) {
-      const vars = [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]);
-      if (vars.length > 0) {
-        for (const v of vars) {
-          const val = window.prompt(`Value for {{${v}}}:`);
-          if (val !== null) text = text.replaceAll(`{{${v}}}`, val);
-        }
-      }
+  function handleInject(prompt: Prompt) {
+    const vars = [...new Set([...prompt.body.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]))];
+    if (vars.length > 0) {
+      setVarFillTarget(prompt);
+      return;
     }
+    doInject(prompt.body, prompt);
+  }
 
+  async function handleVarFillSubmit(values: Record<string, string>) {
+    if (!varFillTarget) return;
+    let text = varFillTarget.body;
+    for (const [k, v] of Object.entries(values)) {
+      text = text.replaceAll(`{{${k}}}`, v);
+    }
+    setVarFillTarget(null);
+    await doInject(text, varFillTarget);
+  }
+
+  async function doInject(text: string, prompt: Prompt) {
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
       if (!tab?.id || !tab.url) return;
 
       const url = tab.url;
@@ -197,13 +195,6 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
       const isClaude = url.includes('claude.ai');
       const isGemini = url.includes('gemini.google.com');
       const isGrok = url.includes('grok.com');
-      const isPaidPlatform = isClaude || isGemini || isGrok;
-
-      if (isPaidPlatform && !paid) {
-        setUpgradeReason('injection');
-        return;
-      }
-
       if (!isChatGPT && !isClaude && !isGemini && !isGrok) {
         setInjectStatus('Navigate to ChatGPT, Claude, Gemini, or Grok first');
         setTimeout(() => setInjectStatus(null), 2500);
@@ -227,17 +218,14 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-white font-bold text-base">PromptVault</h1>
           <div className="flex items-center gap-2">
-            {!paid && (
-              <span className="text-xs text-gray-500">
-                {vault.prompts.length}/{FREE_PROMPT_LIMIT} prompts
-              </span>
-            )}
             <button
               onClick={() => setShowSettings(true)}
               className="p-1 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800 transition-colors"
               title="Settings"
             >
-              ⚙
+              <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor">
+                <path fillRule="evenodd" clipRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" />
+              </svg>
             </button>
             <button
               onClick={handleAddClick}
@@ -270,13 +258,15 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
           </select>
         </div>
 
-        <div className="flex items-center gap-1">
-          <CategoryFilter
-            categories={vault.categories}
-            active={activeCategory}
-            showTop={hasUsage}
-            onChange={setActiveCategory}
-          />
+        <div className="flex items-center gap-1 min-w-0">
+          <div className="flex-1 min-w-0">
+            <CategoryFilter
+              categories={vault.categories}
+              active={activeCategory}
+              showTop={hasUsage}
+              onChange={setActiveCategory}
+            />
+          </div>
           <button
             onClick={() => setShowManageCategories(true)}
             className="shrink-0 text-gray-600 hover:text-gray-400 text-xs px-1 transition-colors"
@@ -348,9 +338,7 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
       {showAddModal && (
         <AddPromptModal
           categories={vault.categories}
-          canAddCategory={canAddCategory}
           onAdd={handleAdd}
-          onUpgrade={() => { setShowAddModal(false); setUpgradeReason('categories'); }}
           onClose={() => setShowAddModal(false)}
         />
       )}
@@ -358,15 +346,15 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
         <SettingsModal
           vault={vault}
           onVaultChange={onVaultChange}
+          onLock={onLock}
+          onSetRemember={onSetRemember}
           onClose={() => setShowSettings(false)}
         />
       )}
       {showManageCategories && (
         <ManageCategoriesModal
           vault={vault}
-          paid={paid}
           onVaultChange={onVaultChange}
-          onUpgrade={() => { setShowManageCategories(false); setUpgradeReason('categories'); }}
           onClose={() => setShowManageCategories(false)}
         />
       )}
@@ -378,11 +366,12 @@ export default function MainScreen({ vault, paid, onVaultChange }: Props) {
           onClose={() => setEditingPrompt(null)}
         />
       )}
-      {upgradeReason && (
-        <UpgradeModal
-          reason={upgradeReason}
-          totalUses={vault.prompts.reduce((sum, p) => sum + p.useCount, 0)}
-          onClose={() => setUpgradeReason(null)}
+      {varFillTarget && (
+        <VariableFillModal
+          promptTitle={varFillTarget.title}
+          variables={[...new Set([...varFillTarget.body.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]))]}
+          onInject={handleVarFillSubmit}
+          onClose={() => setVarFillTarget(null)}
         />
       )}
       {showOnboarding && <OnboardingOverlay onDismiss={dismissOnboarding} />}

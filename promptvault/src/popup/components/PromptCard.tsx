@@ -23,6 +23,17 @@ export default function PromptCard({
   onTagClick,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  const hasVars = /\{\{[^}]+\}\}/.test(prompt.body);
+
+  function renderBodyPreview(body: string) {
+    const preview = body.slice(0, 100);
+    const parts = preview.split(/(\{\{[^}]+\}\})/g);
+    return parts.map((part, i) =>
+      /^\{\{[^}]+\}\}$/.test(part)
+        ? <span key={i} className="text-violet-400 font-mono">{part}</span>
+        : <span key={i}>{part}</span>
+    );
+  }
 
   async function handleCopy() {
     await navigator.clipboard.writeText(prompt.body);
@@ -56,7 +67,7 @@ export default function PromptCard({
       </div>
 
       <p className="text-gray-400 text-xs leading-relaxed mb-2 line-clamp-2 ml-5">
-        {prompt.body.slice(0, 80)}{prompt.body.length > 80 ? '…' : ''}
+        {renderBodyPreview(prompt.body)}{prompt.body.length > 100 ? '…' : ''}
       </p>
 
       {prompt.tags.length > 0 && (
@@ -84,7 +95,7 @@ export default function PromptCard({
           onClick={() => onInject(prompt)}
           className="flex-1 py-1 rounded bg-violet-700 hover:bg-violet-600 text-white text-xs transition-colors"
         >
-          Inject
+          {hasVars ? 'Inject…' : 'Inject'}
         </button>
         <button
           onClick={() => onEdit(prompt)}

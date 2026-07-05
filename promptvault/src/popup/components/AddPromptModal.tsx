@@ -3,15 +3,13 @@ import { type Prompt } from '../../lib/storage';
 
 interface Props {
   categories: string[];
-  canAddCategory: boolean;
   onAdd: (prompt: Omit<Prompt, 'id' | 'createdAt'>) => void;
-  onUpgrade: () => void;
   onClose: () => void;
 }
 
 const NEW_CATEGORY_SENTINEL = '__new__';
 
-export default function AddPromptModal({ categories, canAddCategory, onAdd, onUpgrade, onClose }: Props) {
+export default function AddPromptModal({ categories, onAdd, onClose }: Props) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [category, setCategory] = useState(categories[0] ?? 'General');
@@ -21,10 +19,6 @@ export default function AddPromptModal({ categories, canAddCategory, onAdd, onUp
 
   function handleCategoryChange(val: string) {
     if (val === NEW_CATEGORY_SENTINEL) {
-      if (!canAddCategory) {
-        onUpgrade();
-        return;
-      }
       setAddingNew(true);
       setCategory('');
     } else {
@@ -66,7 +60,7 @@ export default function AddPromptModal({ categories, canAddCategory, onAdd, onUp
             className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white text-sm placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-violet-500"
           />
           <textarea
-            placeholder="Prompt body… use {{variable}} for variables (Pro)"
+            placeholder="Prompt body… use {{variable}} as a fill-in placeholder"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={4}
@@ -107,7 +101,7 @@ export default function AddPromptModal({ categories, canAddCategory, onAdd, onUp
               {categories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-              <option value={NEW_CATEGORY_SENTINEL}>+ New category{!canAddCategory ? ' (Pro)' : ''}</option>
+              <option value={NEW_CATEGORY_SENTINEL}>+ New category</option>
             </select>
           )}
 

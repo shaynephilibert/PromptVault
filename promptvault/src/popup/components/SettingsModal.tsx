@@ -1,16 +1,31 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { type VaultData, exportVault, importPrompts } from '../../lib/storage';
 
 interface Props {
   vault: VaultData;
   onVaultChange: (updated: VaultData) => void;
+  onLock: () => void;
+  onSetRemember: (remember: boolean) => Promise<void>;
   onClose: () => void;
 }
 
-export default function SettingsModal({ vault, onVaultChange, onClose }: Props) {
+export default function SettingsModal({ vault, onVaultChange, onLock, onSetRemember, onClose }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [staySignedIn, setStaySignedIn] = useState(false);
+
+  useEffect(() => {
+    chrome.storage.local.get('pv_remember_pw', (result) => {
+      setStaySignedIn(!!result['pv_remember_pw']);
+    });
+  }, []);
+
+  async function handleStaySignedInToggle() {
+    const next = !staySignedIn;
+    setStaySignedIn(next);
+    await onSetRemember(next);
+  }
 
   function handleExport() {
     exportVault(vault);
@@ -44,15 +59,15 @@ export default function SettingsModal({ vault, onVaultChange, onClose }: Props) 
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="bg-gray-900 rounded-xl p-5 w-full max-w-xs border border-gray-700">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-gray-900 rounded-xl w-full max-w-xs border border-gray-700 flex flex-col max-h-[calc(100vh-2rem)]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 shrink-0">
           <h2 className="text-white font-bold text-sm">Settings</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-300 text-lg leading-none">
             ✕
           </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="flex-1 min-h-0 overflow-y-auto px-5 pb-5 space-y-3">
           {/* Export */}
           <div className="bg-gray-800 rounded-lg p-3">
             <p className="text-white text-xs font-medium mb-1">Export Vault</p>
@@ -92,6 +107,26 @@ export default function SettingsModal({ vault, onVaultChange, onClose }: Props) 
             {importError && (
               <p className="text-red-400 text-xs mt-2">{importError}</p>
             )}
+          </div>
+
+          {/* Lock */}
+          <div className="bg-gray-800 rounded-lg p-3">
+            <p className="text-white text-xs font-medium mb-1">Lock Vault</p>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-gray-500 text-xs">Stay signed in across restarts</p>
+              <button
+                onClick={handleStaySignedInToggle}
+                className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${staySignedIn ? 'bg-violet-600' : 'bg-gray-600'}`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${staySignedIn ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+              </button>
+            </div>
+            <button
+              onClick={onLock}
+              className="w-full py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs font-medium transition-colors"
+            >
+              Lock now
+            </button>
           </div>
 
           {/* Stats */}

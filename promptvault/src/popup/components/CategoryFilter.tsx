@@ -7,7 +7,7 @@ interface Props {
 
 export default function CategoryFilter({ categories, active, showTop, onChange }: Props) {
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+    <div className="flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
       <button
         onClick={() => onChange('All')}
         className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${

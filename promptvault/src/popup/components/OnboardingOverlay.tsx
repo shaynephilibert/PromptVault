@@ -26,7 +26,7 @@ const STEPS = [
       </svg>
     ),
     title: 'Inject into any AI',
-    body: 'Open ChatGPT and click Inject on any prompt — it lands directly in the input box. Claude, Gemini, and Grok injection is available on the Pro plan.',
+    body: 'Open ChatGPT, Claude, Gemini, or Grok and click Inject on any prompt — it lands directly in the input box.',
   },
   {
     icon: (

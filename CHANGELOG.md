@@ -2,6 +2,58 @@
 
 All notable changes to PromptVault will be documented here.
 
+## [1.0.7] — 2026-03-31
+
+### Changed
+- Gear icon replaced with SVG (consistent rendering across all OS versions)
+- Prompt variables (`{{variable}}`) now available on free plan — you'll be prompted to fill in each value before injecting
+- Variable fill-in flow replaced with an in-extension modal (replaces native browser `window.prompt()` dialogs)
+- Settings modal now includes Upgrade to Pro / Manage subscription depending on account status
+
+### Fixed
+- Gear icon was disproportionate (emoji rendering); now uses SVG path geometry
+
+---
+
+## [1.0.6] — 2026-03-28 *(MCP bridge — held, not shipped)*
+
+> Feature built but pulled back pending better discoverability and documentation. Code lives in `promptvault-mcp/`. See ROADMAP.md.
+
+---
+
+## [1.0.5] — 2026-03-28
+
+### Added
+- Session unlock — vault stays unlocked for the browser session; no password re-entry needed until browser closes or user manually locks
+- "Lock now" button in Settings to immediately require password on next open
+- Agent message API via `chrome.runtime.onMessageExternal` — other extensions can query the vault with `PV_STATUS`, `PV_GET_ALL`, `PV_SEARCH`, `PV_GET_BY_CATEGORY`, `PV_GET_BY_TAG`; returns `{ error: 'locked' }` when vault is locked
+
+---
+
+## [1.0.4] — 2026-03-28
+
+### Fixed
+- Removed unused `scripting` permission from manifest — caused Chrome Web Store rejection (Use of Permissions violation)
+
+---
+
+## [1.0.3] — 2026-03-28
+
+### Changed
+- Injection into Claude, Gemini, and Grok is now available on the free plan — all 4 platforms unlocked for everyone
+- Removed platform gate from upgrade modal; Pro value is now unlimited prompts/categories + prompt variables
+- Updated onboarding overlay and README to reflect new free tier
+
+---
+
+## [1.0.2] — 2026-03-28
+
+### Changed
+- Replaced emoji-based lock icon with clean SVG path geometry — consistent rendering across all OS versions, no font dependency
+- Regenerated all icon sizes (16, 48, 128px) from updated `scripts/generate-icons.mjs`
+
+---
+
 ## [1.0.1] — 2026-03-27
 
 ### Changed
