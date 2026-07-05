@@ -1,13 +1,8 @@
-import ExtPay from 'extpay';
-import { EXTENSION_ID } from '../lib/extensionpay';
 import type { Prompt, VaultData } from '../lib/storage';
 
 function syncPopupState(locked: boolean): void {
   chrome.action.setPopup({ popup: locked ? '' : 'popup/index.html' });
 }
-
-const extpay = ExtPay(EXTENSION_ID);
-extpay.startBackground();
 
 type AgentMessage =
   | { type: 'PV_STATUS' }

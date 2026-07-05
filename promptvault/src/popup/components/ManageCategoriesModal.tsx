@@ -1,28 +1,21 @@
 import { useState } from 'react';
 import { type VaultData } from '../../lib/storage';
 
-const FREE_CATEGORY_LIMIT = 3;
-
 interface Props {
   vault: VaultData;
-  paid: boolean;
   onVaultChange: (updated: VaultData) => void;
-  onUpgrade: () => void;
   onClose: () => void;
 }
 
-export default function ManageCategoriesModal({ vault, paid, onVaultChange, onUpgrade, onClose }: Props) {
+export default function ManageCategoriesModal({ vault, onVaultChange, onClose }: Props) {
   const [newName, setNewName] = useState('');
   const [renamingIndex, setRenamingIndex] = useState<number | null>(null);
   const [renameValue, setRenameValue] = useState('');
-
-  const canAdd = paid || vault.categories.length < FREE_CATEGORY_LIMIT;
 
   function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const name = newName.trim();
     if (!name || vault.categories.includes(name)) return;
-    if (!canAdd) { onUpgrade(); return; }
     onVaultChange({ ...vault, categories: [...vault.categories, name] });
     setNewName('');
   }
@@ -107,26 +100,18 @@ export default function ManageCategoriesModal({ vault, paid, onVaultChange, onUp
         <form onSubmit={handleAdd} className="flex gap-2">
           <input
             type="text"
-            placeholder={canAdd ? 'New category…' : 'Upgrade for more'}
+            placeholder="New category…"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            disabled={!canAdd}
-            className="flex-1 px-2 py-1.5 rounded-lg bg-gray-800 text-white text-xs placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-violet-500 disabled:opacity-40"
+            className="flex-1 px-2 py-1.5 rounded-lg bg-gray-800 text-white text-xs placeholder-gray-500 border border-gray-700 focus:outline-none focus:border-violet-500"
           />
           <button
             type="submit"
-            disabled={!canAdd}
-            className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 disabled:opacity-40 text-white text-xs font-medium transition-colors"
+            className="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium transition-colors"
           >
             Add
           </button>
         </form>
-
-        {!paid && (
-          <p className="text-gray-600 text-xs mt-2 text-center">
-            {vault.categories.length}/{FREE_CATEGORY_LIMIT} categories on free plan
-          </p>
-        )}
       </div>
     </div>
   );

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { vaultExists, loadVault, saveVault, saveSession, loadSession, clearSession, type VaultData } from '../lib/storage';
-import { isPaidUser } from '../lib/extensionpay';
+import { vaultExists, loadVault, saveVault, saveSession, loadSession, clearSession, getRememberedPassword, setRememberedPassword, type VaultData } from '../lib/storage';
 import SetPasswordScreen from './components/SetPasswordScreen';
 import UnlockScreen from './components/UnlockScreen';
 import MainScreen from './components/MainScreen';
@@ -12,27 +11,40 @@ export default function Popup() {
   const [screen, setScreen] = useState<Screen>('loading');
   const [vault, setVault] = useState<VaultData | null>(null);
   const [password, setPassword] = useState('');
-  const [paid, setPaid] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [session, paidStatus] = await Promise.all([loadSession(), isPaidUser()]);
-      setPaid(paidStatus);
+      // Resolve screen from local/session storage only — no network
+      const session = await loadSession();
       if (session) {
         setPassword(session.password);
         setVault(session.vault);
         setScreen('main');
-        return;
+      } else {
+        const remembered = await getRememberedPassword();
+        if (remembered) {
+          const data = await loadVault(remembered);
+          if (data) {
+            await saveSession(remembered, data);
+            setPassword(remembered);
+            setVault(data);
+            setScreen('main');
+          } else {
+            await setRememberedPassword(null);
+            setScreen('unlock');
+          }
+        } else {
+          const exists = await vaultExists();
+          setScreen(exists ? 'unlock' : 'set-password');
+        }
       }
-      const exists = await vaultExists();
-      setScreen(exists ? 'unlock' : 'set-password');
     })();
   }, []);
 
   async function handleSetPassword(pw: string) {
     const initial: VaultData = {
       prompts: [],
-      categories: ['General', 'Writing', 'Coding', 'Research'],
+      categories: ['General', 'Writing', 'Coding'],
     };
     await saveVault(initial, pw);
     await saveSession(pw, initial);
@@ -58,10 +70,14 @@ export default function Popup() {
   }
 
   async function handleLock() {
-    await clearSession();
+    await Promise.all([clearSession(), setRememberedPassword(null)]);
     setPassword('');
     setVault(null);
     setScreen('unlock');
+  }
+
+  async function handleSetRemember(remember: boolean) {
+    await setRememberedPassword(remember ? password : null);
   }
 
   if (screen === 'loading') {
@@ -83,9 +99,9 @@ export default function Popup() {
   return (
     <MainScreen
       vault={vault!}
-      paid={paid}
       onVaultChange={handleVaultChange}
       onLock={handleLock}
+      onSetRemember={handleSetRemember}
     />
   );
 }

@@ -19,6 +19,20 @@ export interface VaultData {
 const STORAGE_KEY = 'promptvault_data';
 const SESSION_PW_KEY = 'pv_session_pw';
 const SESSION_VAULT_KEY = 'pv_session_vault';
+const REMEMBER_KEY = 'pv_remember_pw';
+
+export async function getRememberedPassword(): Promise<string | null> {
+  const result = await chrome.storage.local.get(REMEMBER_KEY);
+  return (result[REMEMBER_KEY] as string) ?? null;
+}
+
+export async function setRememberedPassword(password: string | null): Promise<void> {
+  if (password) {
+    await chrome.storage.local.set({ [REMEMBER_KEY]: password });
+  } else {
+    await chrome.storage.local.remove(REMEMBER_KEY);
+  }
+}
 
 export async function saveSession(password: string, vault: VaultData): Promise<void> {
   await chrome.storage.session.set({
